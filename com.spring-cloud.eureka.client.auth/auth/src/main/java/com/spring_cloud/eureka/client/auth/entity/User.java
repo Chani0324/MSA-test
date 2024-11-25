@@ -4,6 +4,8 @@ import com.spring_cloud.eureka.client.auth.dto.UserRequestDto;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.util.UUID;
+
 @Entity
 @Table(name = "users",
         indexes = @Index(name = "idx_email", columnList = "email"))
@@ -17,7 +19,7 @@ public class User {
      */
     @Id
     @GeneratedValue
-    private Long id;
+    private UUID id;
 
     @Column(unique = true)
     private String email;
