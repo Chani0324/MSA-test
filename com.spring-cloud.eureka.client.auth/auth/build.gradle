@@ -34,6 +34,14 @@ dependencyManagement {
 }
 
 dependencies {
+	implementation 'io.micrometer:micrometer-tracing-bridge-brave'
+	implementation 'io.github.openfeign:feign-micrometer'
+	implementation 'io.zipkin.reporter2:zipkin-reporter-brave'
+
+	implementation 'org.springframework.cloud:spring-cloud-starter-config'
+
+	runtimeOnly 'com.h2database:h2'
+
 	implementation 'io.jsonwebtoken:jjwt:0.12.6'
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
@@ -47,8 +55,6 @@ dependencies {
 	testImplementation 'io.projectreactor:reactor-test'
 
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-
-	runtimeOnly 'org.hsqldb:hsqldb'
 
 	implementation 'com.querydsl:querydsl-jpa:5.0.0:jakarta'
 	annotationProcessor "com.querydsl:querydsl-apt:${dependencyManagement.importedProperties['querydsl.version']}:jakarta"

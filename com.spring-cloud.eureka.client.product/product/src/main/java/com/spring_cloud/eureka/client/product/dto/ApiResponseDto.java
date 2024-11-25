@@ -1,4 +1,4 @@
-package com.spring_cloud.eureka.client.auth.dto;
+package com.spring_cloud.eureka.client.product.dto;
 
 import lombok.*;
 

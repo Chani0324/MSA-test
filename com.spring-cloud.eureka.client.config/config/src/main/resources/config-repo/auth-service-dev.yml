@@ -1,5 +1,5 @@
 server:
-  port: 19093
+  port: 19095
 
 spring:
   datasource:
@@ -28,5 +28,3 @@ management:
   tracing:
     sampling:
       probability: 1.0
-
-message: "product-service message"

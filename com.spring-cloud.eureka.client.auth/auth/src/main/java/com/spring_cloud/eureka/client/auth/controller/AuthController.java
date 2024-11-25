@@ -19,18 +19,20 @@ public class AuthController {
 
     @PostMapping("/auth/signIn")
     public ResponseEntity<ApiResponseDto<?>> createAuthToken(@RequestBody UserRequestDto userRequestDto) {
+        String token = authService.signIn(userRequestDto);
         return ResponseEntity.ok()
-                .header("Authorization", authService.signIn(userRequestDto))
+                .header("Authorization", token)
                 .body(ApiResponseDto.response(2000,
                         "로그인에 성공하였습니다.",
-                        null));
+                        ""));
     }
 
     @PostMapping("/auth/signUp")
     public ResponseEntity<ApiResponseDto<UserResponseDto>> signUp(@RequestBody UserRequestDto userRequestDto) {
+        UserResponseDto userResponseDto = authService.signUp(userRequestDto);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.response(2100,
                         "회원가입에 성공하였습니다."
-                        , authService.signUp(userRequestDto)));
+                        , userResponseDto));
     }
 }
