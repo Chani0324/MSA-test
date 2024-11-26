@@ -44,7 +44,7 @@ public class ProductController {
                                                                                 @RequestHeader(value = "X-Role", required = true) String role,
                                                                                 Pageable pageable) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponseDto.response(3000,
+                .body(ApiResponseDto.response(3100,
                         "제품들을 조회합니다.",
                         productService.getProducts(searchDto, userId, role, pageable)));
     }

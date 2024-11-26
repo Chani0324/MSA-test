@@ -1,5 +1,6 @@
 package com.spring_cloud.eureka.client.order.entity;
 
+import com.spring_cloud.eureka.client.order.dto.OrderProductListDto;
 import com.spring_cloud.eureka.client.order.dto.OrderResponseDto;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -8,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,27 +28,31 @@ public class Order extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private OrderStatus status;
 
-    @ElementCollection
-    @CollectionTable(name = "order_items", joinColumns = @JoinColumn(name = "order_id"))
-    @Column(name = "order_item_id")
-    private List<UUID> orderItemIds;
+    @Column(name = "order_product_id")
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<OrderProductList> orderProductList = new ArrayList<>();
+
+    public void addOrderProduct(OrderProductList orderProductList) {
+        this.orderProductList.add(orderProductList);
+        orderProductList.updateOrder(this);
+    }
 
     public void updateStatus(OrderStatus status) {
         this.status = status;
     }
 
     // 팩토리 메서드
-    public static Order createOrder(List<UUID> orderItemIds, String createdBy) {
+    public static Order createOrderFrom(String createdBy) {
         return Order.builder()
-                .orderItemIds(orderItemIds)
+                .orderProductList(new ArrayList<>())
                 .createdBy(createdBy)
                 .status(OrderStatus.CREATED)
                 .build();
     }
 
     // 업데이트 메서드
-    public void updateOrder(List<UUID> orderItemIds, String updatedBy, OrderStatus status) {
-        this.orderItemIds = orderItemIds;
+    public void updateOrder(List<OrderProductList> orderProductList, String updatedBy, OrderStatus status) {
+        this.orderProductList = orderProductList;
         this.updateUpdatedBy(updatedBy);
         this.status = status;
     }
@@ -63,7 +69,9 @@ public class Order extends BaseEntity {
                 this.getCreatedBy(),
                 this.getUpdatedAt(),
                 this.getUpdatedBy(),
-                this.orderItemIds
+                this.orderProductList.stream()
+                .map(OrderProductListDto::orderProductFrom)
+                .toList()
         );
     }
 }

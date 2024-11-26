@@ -10,7 +10,7 @@ import java.util.UUID;
 @Getter
 public class OrderSearchDto {
     private OrderStatus status;
-    private List<UUID> orderItemIds;
+    private List<OrderProductListDto> orderProductListDto;
     private String sortBy;
     private Pageable pageable;
 }

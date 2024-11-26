@@ -1,18 +1,16 @@
 package com.spring_cloud.eureka.client.order.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
-import com.spring_cloud.eureka.client.order.client.product.ProductResponseDto;
 import com.spring_cloud.eureka.client.order.entity.Order;
 import com.spring_cloud.eureka.client.order.entity.OrderStatus;
-import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-@Data
+@Getter
 @NoArgsConstructor
 public class OrderResponseDto {
     private UUID orderId;
@@ -21,17 +19,17 @@ public class OrderResponseDto {
     private String createdBy;
     private LocalDateTime updatedAt;
     private String updatedBy;
-    private List<UUID> orderItemIds;
+    private List<OrderProductListDto> orderProductList;
 
     @QueryProjection
-    public OrderResponseDto(UUID orderId, OrderStatus status, LocalDateTime createdAt, String createdBy, LocalDateTime updatedAt, String updatedBy, List<UUID> orderItemIds) {
+    public OrderResponseDto(UUID orderId, OrderStatus status, LocalDateTime createdAt, String createdBy, LocalDateTime updatedAt, String updatedBy, List<OrderProductListDto> orderProductList) {
         this.orderId = orderId;
         this.status = status;
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.updatedAt = updatedAt;
         this.updatedBy = updatedBy;
-        this.orderItemIds = orderItemIds;
+        this.orderProductList = orderProductList;
     }
 
     public static OrderResponseDto toOrderResponseDtoFrom(Order order) {
@@ -42,7 +40,10 @@ public class OrderResponseDto {
                 order.getCreatedBy(),
                 order.getUpdatedAt(),
                 order.getUpdatedBy(),
-                order.getOrderItemIds()
+                order.getOrderProductList().stream()
+                        .map(OrderProductListDto::orderProductFrom)
+                        .toList()
         );
     }
+
 }
