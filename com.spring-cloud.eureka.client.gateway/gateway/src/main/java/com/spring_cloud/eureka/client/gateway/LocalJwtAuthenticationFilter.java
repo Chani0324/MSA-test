@@ -59,7 +59,7 @@ public class LocalJwtAuthenticationFilter implements GlobalFilter {
             log.info("#####payload :: " + claimsJws.getPayload().toString());
             Claims claims = claimsJws.getPayload();
             exchange.getRequest().mutate()
-                    .header("X-User-Id", claims.get("user_id").toString())
+                    .header("X-User_Id", claims.get("user_id").toString())
                     .header("X-Email", claims.get("email").toString())
                     .header("X-Role", claims.get("role").toString())
                     .build();

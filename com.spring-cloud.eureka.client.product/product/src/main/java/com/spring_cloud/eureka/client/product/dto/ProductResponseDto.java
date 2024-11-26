@@ -10,7 +10,7 @@ import java.util.UUID;
 @Getter
 @NoArgsConstructor
 public class ProductResponseDto {
-    private UUID id;
+    private UUID productId;
     private String name;
     private String description;
     private Integer price;
@@ -21,8 +21,8 @@ public class ProductResponseDto {
     private String updatedBy;
 
     @QueryProjection
-    public ProductResponseDto(UUID id, String name, String description, Integer price, Integer quantity, LocalDateTime createdAt, String createdBy, LocalDateTime updatedAt, String updatedBy) {
-        this.id = id;
+    public ProductResponseDto(UUID productId, String name, String description, Integer price, Integer quantity, LocalDateTime createdAt, String createdBy, LocalDateTime updatedAt, String updatedBy) {
+        this.productId = productId;
         this.name = name;
         this.description = description;
         this.price = price;

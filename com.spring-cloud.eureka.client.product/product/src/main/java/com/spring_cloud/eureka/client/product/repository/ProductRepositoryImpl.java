@@ -1,11 +1,13 @@
 package com.spring_cloud.eureka.client.product.repository;
 
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Predicate;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.spring_cloud.eureka.client.product.dto.ProductResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductSearchDto;
 import com.spring_cloud.eureka.client.product.dto.QProductResponseDto;
+import com.spring_cloud.eureka.client.product.entity.UserRoleEnum;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -24,7 +26,7 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<ProductResponseDto> searchProducts(ProductSearchDto searchDto, Pageable pageable) {
+    public Page<ProductResponseDto> searchProducts(ProductSearchDto searchDto, String userId, UserRoleEnum role, Pageable pageable) {
         List<OrderSpecifier<?>> orders = getAllOrderSpecifiers(pageable);
 
 //         동적 쿼리 작성
@@ -41,7 +43,8 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                         product.updatedBy
                 ))
                 .from(product)
-                .where(nameContains(searchDto.getName()),
+                .where(isMemberOrManager(userId, role),
+                        nameContains(searchDto.getName()),
                         descriptionContains(searchDto.getDescription()),
                         priceBetween(searchDto.getMinPrice(), searchDto.getMaxPrice()),
                         quantityBetween(searchDto.getMinQuantity(), searchDto.getMaxQuantity()))
@@ -61,6 +64,10 @@ public class ProductRepositoryImpl implements ProductRepositoryCustom {
                 .size(); // 결과의 총 개수
 
         return new PageImpl<>(results, pageable, total);
+    }
+
+    private BooleanExpression isMemberOrManager(String userId, UserRoleEnum role) {
+        return role == UserRoleEnum.MEMBER ? product.deleted.eq(false) : null;
     }
 
     private BooleanExpression nameContains(String name) {

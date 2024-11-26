@@ -69,4 +69,8 @@ public class Product extends BaseEntity {
                 this.getUpdatedBy()
         );
     }
+
+    public void reduceQuantity(int quantity) {
+        this.quantity -= quantity;
+    }
 }
