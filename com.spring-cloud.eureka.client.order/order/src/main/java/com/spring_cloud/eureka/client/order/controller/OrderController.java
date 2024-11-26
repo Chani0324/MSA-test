@@ -1,5 +1,6 @@
-package com.spring_cloud.eureka.client.order;
+package com.spring_cloud.eureka.client.order.controller;
 
+import com.spring_cloud.eureka.client.order.service.OrderService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
