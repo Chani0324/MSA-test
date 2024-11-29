@@ -3,10 +3,7 @@ package com.spring_cloud.eureka.client.order.entity;
 import com.spring_cloud.eureka.client.order.dto.OrderProductListDto;
 import com.spring_cloud.eureka.client.order.dto.OrderResponseDto;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import java.util.ArrayList;
@@ -15,7 +12,7 @@ import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 @SuperBuilder
 @Entity
 @Table(name = "orders")
@@ -23,6 +20,7 @@ public class Order extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(nullable = false)
     private UUID orderId;
 
     @Enumerated(EnumType.STRING)

@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/auth.main.iml" filepath="$PROJECT_DIR$/.idea/modules/auth.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/com.spring-cloud.eureka.server.iml" filepath="$PROJECT_DIR$/.idea/com.spring-cloud.eureka.server.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/config.main.iml" filepath="$PROJECT_DIR$/.idea/modules/config.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/gateway.main.iml" filepath="$PROJECT_DIR$/.idea/modules/gateway.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/order.main.iml" filepath="$PROJECT_DIR$/.idea/modules/order.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/product.main.iml" filepath="$PROJECT_DIR$/.idea/modules/product.main.iml" />

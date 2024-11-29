@@ -29,9 +29,7 @@ public class ProductController {
                                                            @RequestHeader(value = "X-User_id", required = true) String userId,
                                                            @RequestHeader(value = "X-Role", required = true) String role
                                                            ) {
-        if (!"MANAGER".equals(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied. User role is not MANAGER.");
-        }
+        checkManager(role);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.response(3000,
                         "제품을 등록하였습니다.",
@@ -50,33 +48,46 @@ public class ProductController {
     }
 
     @GetMapping("/{productId}")
-    public ProductResponseDto getProductById(@PathVariable UUID productId) {
-        return productService.getProductById(productId);
+    public ResponseEntity<ApiResponseDto<ProductResponseDto>> getProductById(@PathVariable UUID productId) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponseDto.response(3101,
+                        "해당 제품을 조회합니다.",
+                        productService.getProductById(productId)));
     }
 
     @PutMapping("/{productId}")
-    public ProductResponseDto updateProduct(@PathVariable UUID productId,
-                                            @RequestBody ProductRequestDto orderRequestDto,
+    public ResponseEntity<ApiResponseDto<ProductResponseDto>> updateProduct(@PathVariable UUID productId,
+                                            @RequestBody ProductRequestDto productRequestDto,
                                             @RequestHeader(value = "X-User_Id", required = true) String userId,
                                             @RequestHeader(value = "X-Role", required = true) String role) {
-        if (!"MANAGER".equals(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied. User role is not MANAGER.");
-        }
-        return productService.updateProduct(productId, orderRequestDto, userId);
+        checkManager(role);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponseDto.response(3200,
+                        "등록된 제품을 수정하였습니다.",
+                        productService.updateProduct(productId, productRequestDto, userId)));
     }
 
     @DeleteMapping("/{productId}")
-    public void deleteProduct(@PathVariable UUID productId,
+    public ResponseEntity<ApiResponseDto<?>> deleteProduct(@PathVariable UUID productId,
                               @RequestHeader(value = "X-User_Id", required = true) String userId,
                               @RequestHeader(value = "X-Role", required = true) String role) {
-        if (!"MANAGER".equals(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied. User role is not MANAGER.");
-        }
+        checkManager(role);
         productService.deleteProduct(productId, userId);
+
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponseDto.response(3300,
+                        "등록된 제품을 삭제하였습니다.",
+                        ""));
     }
 
     @GetMapping("/{productId}/reduceQuantity")
     public void reduceProductQuantity(@PathVariable UUID productId, @RequestParam int quantity) {
         productService.reduceProductQuantity(productId, quantity);
+    }
+
+    private void checkManager(String role) {
+        if (!"MANAGER".equals(role)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied. User role is not MANAGER.");
+        }
     }
 }
