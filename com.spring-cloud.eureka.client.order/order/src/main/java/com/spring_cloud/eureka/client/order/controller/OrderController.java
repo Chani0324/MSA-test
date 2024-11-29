@@ -35,27 +35,37 @@ public class OrderController {
     public ResponseEntity<ApiResponseDto<Page<OrderResponseDto>>> getOrders(OrderSearchDto searchDto, Pageable pageable,
                                             @RequestHeader(value = "X-User_Id", required = true) String userId,
                                             @RequestHeader(value = "X-Role", required = true) String role) {
-        return ResponseEntity.status(HttpStatus.CREATED)
+        return ResponseEntity.status(HttpStatus.OK)
                 .body(ApiResponseDto.response(4100,
                         "주문을 조회합니다.",
                         orderService.getOrders(searchDto, pageable, role, userId)));
     }
 
     @GetMapping("/{orderId}")
-    public OrderResponseDto getOrderById(@PathVariable UUID orderId) {
-        return orderService.getOrderById(orderId);
+    public ResponseEntity<ApiResponseDto<OrderResponseDto>> getOrderById(@PathVariable UUID orderId) {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponseDto.response(4101,
+                        "해당 주문을 조회하였습니다.",
+                        orderService.getOrderById(orderId)));
     }
 
     @PutMapping("/{orderId}")
-    public OrderResponseDto updateOrder(@PathVariable UUID orderId,
+    public ResponseEntity<ApiResponseDto<OrderResponseDto>> updateOrder(@PathVariable UUID orderId,
                                         @RequestBody OrderRequestDto orderRequestDto,
                                         @RequestHeader(value = "X-User_Id", required = true) String userId,
                                         @RequestHeader(value = "X-Role", required = true) String role) {
-        return orderService.updateOrder(orderId, orderRequestDto, userId);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponseDto.response(4200,
+                        "해당 주문을 수정하였습니다.",
+                        orderService.updateOrder(orderId, orderRequestDto, userId)));
     }
 
     @DeleteMapping("/{orderId}")
-    public void deleteOrder(@PathVariable UUID orderId, @RequestParam String deletedBy) {
+    public ResponseEntity<ApiResponseDto<?>> deleteOrder(@PathVariable UUID orderId, @RequestParam String deletedBy) {
         orderService.deleteOrder(orderId, deletedBy);
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponseDto.response(4300,
+                        "해당 주문을 삭제하였습니다.",
+                        ""));
     }
 }
