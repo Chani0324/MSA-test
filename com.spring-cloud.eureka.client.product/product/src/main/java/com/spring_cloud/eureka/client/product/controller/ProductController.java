@@ -95,7 +95,7 @@ public class ProductController {
 
     private void checkManager(String role) {
         if (!"MANAGER".equals(role)) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied. User role is not MANAGER.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Access denied. User role is not MANAGER.");
         }
     }
 }

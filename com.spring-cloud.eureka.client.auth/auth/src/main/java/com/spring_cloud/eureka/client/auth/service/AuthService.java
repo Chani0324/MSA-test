@@ -8,6 +8,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
+import org.hibernate.boot.model.naming.IllegalIdentifierException;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -48,7 +49,7 @@ public class AuthService {
         User user = User.userRequestDtoEncodedPasswordOf(userRequestDto, encodedPassword);
         userRepository.save(user);
 
-        return UserResponseDto.userFrom(user);
+        return UserResponseDto.toUserDtoFrom(user);
     }
 
     public String signIn(UserRequestDto userRequestDto) {
@@ -60,6 +61,12 @@ public class AuthService {
         }
 
         return createAccessToken(user);
+    }
+
+    public UserResponseDto getUserByEmail(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(
+                () -> new IllegalIdentifierException("해당 유저의 email이 없습니다."));
+        return UserResponseDto.toUserDtoFrom(user);
     }
 
     public String createAccessToken(User user) {
