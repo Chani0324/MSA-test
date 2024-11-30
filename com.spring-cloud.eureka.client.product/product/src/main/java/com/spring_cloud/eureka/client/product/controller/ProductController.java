@@ -6,6 +6,8 @@ import com.spring_cloud.eureka.client.product.dto.ProductResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductSearchDto;
 import com.spring_cloud.eureka.client.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +18,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
+@Slf4j
 @RefreshScope
 @RequestMapping("/products")
 @RequiredArgsConstructor
@@ -23,6 +26,9 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
+
+    @Value("${server.port}")
+    private String serverPort;
 
     @PostMapping
     public ResponseEntity<ApiResponseDto<ProductResponseDto>> createProduct(@RequestBody ProductRequestDto productRequestDto,
@@ -41,6 +47,7 @@ public class ProductController {
                                                                                 @RequestHeader(value = "X-User_id", required = true) String userId,
                                                                                 @RequestHeader(value = "X-Role", required = true) String role,
                                                                                 Pageable pageable) {
+        log.info(serverPort);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.response(3100,
                         "제품들을 조회합니다.",
@@ -49,6 +56,7 @@ public class ProductController {
 
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponseDto<ProductResponseDto>> getProductById(@PathVariable UUID productId) {
+        log.info(serverPort);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.response(3101,
                         "해당 제품을 조회합니다.",

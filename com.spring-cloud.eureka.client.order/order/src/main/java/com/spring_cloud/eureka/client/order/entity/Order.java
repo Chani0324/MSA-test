@@ -44,6 +44,7 @@ public class Order extends BaseEntity {
         return Order.builder()
                 .orderProductList(new ArrayList<>())
                 .createdBy(createdBy)
+                .updatedBy(createdBy)
                 .status(OrderStatus.CREATED)
                 .build();
     }

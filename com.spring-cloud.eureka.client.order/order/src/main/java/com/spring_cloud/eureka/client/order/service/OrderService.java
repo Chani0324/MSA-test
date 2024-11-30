@@ -2,10 +2,7 @@ package com.spring_cloud.eureka.client.order.service;
 
 import com.spring_cloud.eureka.client.order.client.product.ProductClient;
 import com.spring_cloud.eureka.client.order.client.product.ProductResponseDto;
-import com.spring_cloud.eureka.client.order.dto.OrderProductListDto;
-import com.spring_cloud.eureka.client.order.dto.OrderRequestDto;
-import com.spring_cloud.eureka.client.order.dto.OrderResponseDto;
-import com.spring_cloud.eureka.client.order.dto.OrderSearchDto;
+import com.spring_cloud.eureka.client.order.dto.*;
 import com.spring_cloud.eureka.client.order.entity.Order;
 import com.spring_cloud.eureka.client.order.entity.OrderProductList;
 import com.spring_cloud.eureka.client.order.entity.OrderStatus;
@@ -15,12 +12,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Slf4j
@@ -33,15 +32,15 @@ public class OrderService {
 
     /**
      * 나중에 schedulerTask 를 이용해서 주문 취소가 없을 시 5분마나 넣는다던지, 결제를 확인 후 넣는다던지.. 등등
-     * 다양한 메소드 필요할듯? 주문이 진짜 개어렵...
+     * 다양한 메소드 필요할듯?
      */
     @Transactional
     public OrderResponseDto createOrder(OrderRequestDto requestDto, String userId) {
         // Check if products exist and if they have enough quantity
         for (OrderProductListDto orderProductList : requestDto.getOrderList()) {
-            ProductResponseDto product = productClient.getProduct(orderProductList.getProductId());
-            log.info("############################ Product 수량 확인 : " + product.getQuantity());
-            if (product.getQuantity() < 1) {
+            ResponseEntity<ApiResponseDto<ProductResponseDto>> product = productClient.getProduct(orderProductList.getProductId());
+            log.info("############################ Product 수량 확인 : " + Objects.requireNonNull(product.getBody()).getData().getQuantity());
+            if (Objects.requireNonNull(product.getBody()).getData().getQuantity() < 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product with ID " + orderProductList.getProductId() + " is out of stock.");
             }
         }

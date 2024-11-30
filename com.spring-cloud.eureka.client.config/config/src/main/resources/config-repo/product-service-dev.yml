@@ -8,6 +8,18 @@ spring:
     password:
     driver-class-name: org.h2.Driver
 
+  cloud:
+    loadbalancer:
+#      ribbon:
+#        enabled: false
+      services:
+        product-service:
+          instances:
+            - url: http://localhost:19093
+              weight: 100
+            - url: http://localhost:19094
+              weight: 1
+
   jpa:
     hibernate:
       ddl-auto: create
@@ -28,5 +40,3 @@ management:
   tracing:
     sampling:
       probability: 1.0
-
-message: "product-service message"
