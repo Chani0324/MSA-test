@@ -2,13 +2,16 @@ package com.spring_cloud.eureka.client.product.dto;
 
 import com.querydsl.core.annotations.QueryProjection;
 import com.spring_cloud.eureka.client.product.entity.Product;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
+@Builder
 public class ProductResponseDto {
     private UUID productId;
     private String name;

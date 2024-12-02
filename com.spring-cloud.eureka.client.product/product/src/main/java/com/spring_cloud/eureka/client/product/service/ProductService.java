@@ -1,26 +1,34 @@
 package com.spring_cloud.eureka.client.product.service;
 
+import com.spring_cloud.eureka.client.product.dto.ApiResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductRequestDto;
 import com.spring_cloud.eureka.client.product.dto.ProductResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductSearchDto;
 import com.spring_cloud.eureka.client.product.entity.Product;
 import com.spring_cloud.eureka.client.product.entity.UserRoleEnum;
 import com.spring_cloud.eureka.client.product.repository.ProductRepository;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ProductService {
 
     private final ProductRepository productRepository;
+    private final CircuitBreakerRegistry circuitBreakerRegistry;
 
     @Transactional
     public ProductResponseDto createProduct(ProductRequestDto requestDto, String userId) {
@@ -47,6 +55,7 @@ public class ProductService {
     }
 
     @Transactional(readOnly = true)
+    @CircuitBreaker(name = "ProductService-getProductById", fallbackMethod = "fallbackInGetProductById")
     public ProductResponseDto getProductById(UUID productId) {
         Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found or has been deleted"));
@@ -82,6 +91,27 @@ public class ProductService {
         }
 
         product.reduceQuantity(quantity);
+    }
+
+    // fallback 메서드는 주 메서드와 반환 타입도 같아야한다.
+    public ProductResponseDto fallbackInGetProductById(UUID productId, Throwable throwable) {
+        log.error(throwable.getMessage());
+        return ProductResponseDto.builder()
+                .productId(productId)
+                .build();
+    }
+
+    @PostConstruct
+    public void registerEventListeners() {
+        registerEventListener("ProductService-getProductById");
+    }
+
+    public void registerEventListener(String circuitBreakerName) {
+        circuitBreakerRegistry.circuitBreaker(circuitBreakerName).getEventPublisher()
+                .onStateTransition(event -> log.info("#######CircuitBreaker State Transition: {}", event)) // 상태 전환 이벤트 리스너
+                .onFailureRateExceeded(event -> log.info("#######CircuitBreaker Failure Rate Exceeded: {}", event)) // 실패율 초과 이벤트 리스너
+                .onCallNotPermitted(event -> log.info("#######CircuitBreaker Call Not Permitted: {}", event)) // 호출 차단 이벤트 리스너
+                .onError(event -> log.info("#######CircuitBreaker Error: {}", event)); // 오류 발생 이벤트 리스너
     }
 
 }

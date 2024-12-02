@@ -39,7 +39,7 @@ public class OrderService {
         // Check if products exist and if they have enough quantity
         for (OrderProductListDto orderProductList : requestDto.getOrderList()) {
             ResponseEntity<ApiResponseDto<ProductResponseDto>> product = productClient.getProduct(orderProductList.getProductId());
-            log.info("############################ Product 수량 확인 : " + Objects.requireNonNull(product.getBody()).getData().getQuantity());
+            log.info("###### Product 수량 확인 : " + Objects.requireNonNull(product.getBody()).getData().getQuantity());
             if (Objects.requireNonNull(product.getBody()).getData().getQuantity() < 1) {
                 throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product with ID " + orderProductList.getProductId() + " is out of stock.");
             }

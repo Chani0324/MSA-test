@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/com.spring-cloud.resilience4j.sample.iml" filepath="$PROJECT_DIR$/.idea/com.spring-cloud.resilience4j.sample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/sample.main.iml" filepath="$PROJECT_DIR$/.idea/modules/sample.main.iml" />
     </modules>
   </component>
 </project>

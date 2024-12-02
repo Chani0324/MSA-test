@@ -55,7 +55,7 @@ public class ProductController {
     }
 
     @GetMapping("/{productId}")
-    public ResponseEntity<ApiResponseDto<ProductResponseDto>> getProductById(@PathVariable UUID productId) {
+    public ResponseEntity<ApiResponseDto<? extends ProductResponseDto>> getProductById(@PathVariable UUID productId) {
         log.info(serverPort);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.response(3101,
