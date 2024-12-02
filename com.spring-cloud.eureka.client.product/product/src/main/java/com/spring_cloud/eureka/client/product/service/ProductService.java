@@ -92,6 +92,7 @@ public class ProductService {
     }
 
     // fallback 메서드는 주 메서드와 동일한 매개변수, 반환 타입을 가져야 한다.
+    // 서킷브레이커 메서드들은 따로 class를 만들어 관리하는게 좋을 듯.
     public ProductResponseDto fallbackInGetProductById(UUID productId, Throwable throwable) {
         log.error(throwable.getMessage());
 
@@ -106,6 +107,7 @@ public class ProductService {
                 .build();
     }
 
+    // 등록할 서킷브레이커들
     @PostConstruct
     public void registerEventListeners() {
         registerEventListener("ProductService-getProductById");
