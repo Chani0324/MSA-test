@@ -38,24 +38,21 @@ public class OrderService {
     public OrderResponseDto createOrder(OrderRequestDto requestDto, String userId) {
         // Check if products exist and if they have enough quantity
         for (OrderProductListDto orderProductList : requestDto.getOrderList()) {
-            ResponseEntity<ApiResponseDto<ProductResponseDto>> product = productClient.getProduct(orderProductList.getProductId());
-            log.info("###### Product 수량 확인 : " + Objects.requireNonNull(product.getBody()).getData().getQuantity());
-            if (Objects.requireNonNull(product.getBody()).getData().getQuantity() < 1) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product with ID " + orderProductList.getProductId() + " is out of stock.");
-            }
-        }
+            ResponseEntity<ApiResponseDto<ProductResponseDto>> responseEntity = productClient.getProduct(orderProductList.getProductId());
+            ProductResponseDto product = Objects.requireNonNull(responseEntity.getBody()).getData();
 
+            validateProductQuantity(product, orderProductList.getProductId());
+        }
         Order order = Order.createOrderFrom(userId);
 
-        // Reduce the quantity of each product, add orderProduct in order
         for (OrderProductListDto orderProductList : requestDto.getOrderList()) {
             productClient.reduceProductQuantity(orderProductList.getProductId(), orderProductList.getQuantity());
 
             OrderProductList toOrderProductList = getOrderProductList(orderProductList);
             order.addOrderProduct(toOrderProductList);
         }
-
         Order savedOrder = orderRepository.save(order);
+
         return OrderResponseDto.toOrderResponseDtoFrom(savedOrder);
     }
 
@@ -83,7 +80,6 @@ public class OrderService {
             OrderProductList toOrderProductList = getOrderProductList(orderProductList);
             orderProductLists.add(toOrderProductList);
         }
-
         order.updateOrder(orderProductLists, userId, OrderStatus.valueOf(requestDto.getStatus()));
         Order updatedOrder = orderRepository.save(order);
 
@@ -105,4 +101,19 @@ public class OrderService {
                 .build();
     }
 
+    private void validateProductQuantity(ProductResponseDto product, UUID productId) {
+        if (product.getName().equals("empty or deleted product")) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Product with ID " + productId + " not found.");
+        }
+
+        if (product.getName().equals("circuit breaker is open state.")) {
+            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Service is currently unavailable");
+        }
+
+        Integer quantity = product.getQuantity(); // 수량 가져오기
+
+        if (quantity < 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product with ID " + productId + " is out of stock.");
+        }
+    }
 }

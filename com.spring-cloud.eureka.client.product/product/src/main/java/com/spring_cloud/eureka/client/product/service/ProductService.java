@@ -1,6 +1,5 @@
 package com.spring_cloud.eureka.client.product.service;
 
-import com.spring_cloud.eureka.client.product.dto.ApiResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductRequestDto;
 import com.spring_cloud.eureka.client.product.dto.ProductResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductSearchDto;
@@ -15,7 +14,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
@@ -93,11 +91,18 @@ public class ProductService {
         product.reduceQuantity(quantity);
     }
 
-    // fallback 메서드는 주 메서드와 반환 타입도 같아야한다.
+    // fallback 메서드는 주 메서드와 동일한 매개변수, 반환 타입을 가져야 한다.
     public ProductResponseDto fallbackInGetProductById(UUID productId, Throwable throwable) {
         log.error(throwable.getMessage());
+
+        if (circuitBreakerRegistry.circuitBreaker("ProductService-getProductById").getState().toString().equals("OPEN")) {
+            return ProductResponseDto.builder()
+                    .name("circuit breaker is open state.")
+                    .build();
+        }
+
         return ProductResponseDto.builder()
-                .productId(productId)
+                .name("empty or deleted product")
                 .build();
     }
 
