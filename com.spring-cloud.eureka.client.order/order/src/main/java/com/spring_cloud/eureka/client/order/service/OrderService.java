@@ -9,6 +9,8 @@ import com.spring_cloud.eureka.client.order.entity.OrderStatus;
 import com.spring_cloud.eureka.client.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -31,9 +33,10 @@ public class OrderService {
     private final ProductClient productClient;
 
     /**
-     * 나중에 schedulerTask 를 이용해서 주문 취소가 없을 시 5분마나 넣는다던지, 결제를 확인 후 넣는다던지.. 등등
+     * 나중에 TaskScheduler를 이용해서 주문 취소가 없을 시 5분마나 넣는다던지, 결제를 확인 후 넣는다던지.. 등등
      * 다양한 메소드 필요할듯?
      */
+    @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
     @Transactional
     public OrderResponseDto createOrder(OrderRequestDto requestDto, String userId) {
         // Check if products exist and if they have enough quantity
@@ -56,11 +59,14 @@ public class OrderService {
         return OrderResponseDto.toOrderResponseDtoFrom(savedOrder);
     }
 
+    @Cacheable(cacheNames = "getOrderAllCache", key = "getMethodName()")
     @Transactional(readOnly = true)
     public Page<OrderResponseDto> getOrders(OrderSearchDto searchDto, Pageable pageable, String role, String userId) {
+        log.info("============into method=============");
         return orderRepository.searchOrders(searchDto, pageable,role, userId);
     }
 
+    @Cacheable(cacheNames = "getOrderByOrderIdCache", key = "#result.orderId")
     @Transactional(readOnly = true)
     public OrderResponseDto getOrderById(UUID orderId) {
         Order order = orderRepository.findByOrderIdAndDeletedFalse(orderId)

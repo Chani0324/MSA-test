@@ -6,13 +6,14 @@ import com.spring_cloud.eureka.client.order.entity.OrderStatus;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
-public class OrderResponseDto {
+public class OrderResponseDto implements Serializable {
     private UUID orderId;
     private OrderStatus status;
     private LocalDateTime createdAt;
