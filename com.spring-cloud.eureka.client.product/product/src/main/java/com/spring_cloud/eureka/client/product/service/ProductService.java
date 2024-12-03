@@ -11,6 +11,10 @@ import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -28,6 +32,7 @@ public class ProductService {
     private final ProductRepository productRepository;
     private final CircuitBreakerRegistry circuitBreakerRegistry;
 
+    @CacheEvict(cacheNames = "getProductAllCache", allEntries = true)
     @Transactional
     public ProductResponseDto createProduct(ProductRequestDto requestDto, String userId) {
         Product product = Product.createProductOf(requestDto, userId);
@@ -40,6 +45,8 @@ public class ProductService {
      * 모놀리식의 경우엔 엔티티가 한 프로젝트 내에 존재했지만 MSA에서는 다 떨어져 있어서 연관관계 표현이 불가능하다.
      * 각 엔티티간 연관관계시 pk에 해당하는 값들만 저장을 해놓고 각 서비스에서 호출을 통해 필요한 엔티티 값을 가져와야한다.
      */
+    @Cacheable(cacheNames = "getProductAllCache", key = "getMethodName()")
+    @Transactional(readOnly = true)
     public Page<ProductResponseDto> getProducts(ProductSearchDto searchDto, String userId, String role, Pageable pageable) {
         UserRoleEnum userRoleEnum;
 
@@ -52,14 +59,17 @@ public class ProductService {
         return productRepository.searchProducts(searchDto, userId, userRoleEnum, pageable);
     }
 
-    @Transactional(readOnly = true)
     @CircuitBreaker(name = "ProductService-getProductById", fallbackMethod = "fallbackInGetProductById")
+    @Cacheable(cacheNames = "getProductByProductIdCache", key = "#result.productId")
+    @Transactional(readOnly = true)
     public ProductResponseDto getProductById(UUID productId) {
         Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found or has been deleted"));
         return ProductResponseDto.toProductResponseDtoFrom(product);
     }
 
+    @CachePut(cacheNames = "getProductByProductIdCache", key = "#result.productId")
+    @CacheEvict(cacheNames = "getProductAllCache", allEntries = true)
     @Transactional
     public ProductResponseDto updateProduct(UUID productId, ProductRequestDto requestDto, String userId) {
         Product product = productRepository.findByIdAndDeletedFalse(productId)
@@ -71,6 +81,10 @@ public class ProductService {
         return ProductResponseDto.toProductResponseDtoFrom(updatedProduct);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "getProductByProductIdCache", key = "args[0]"),
+            @CacheEvict(cacheNames = "getProductAllCache", allEntries = true)
+    })
     @Transactional
     public void deleteProduct(UUID productId, String deletedBy) {
         Product product = productRepository.findByIdAndDeletedFalse(productId)
@@ -78,6 +92,7 @@ public class ProductService {
         product.softDeleteProduct(deletedBy);
         productRepository.save(product);
     }
+
 
     @Transactional
     public void reduceProductQuantity(UUID productId, int quantity) {

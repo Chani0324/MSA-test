@@ -10,7 +10,9 @@ import com.spring_cloud.eureka.client.order.repository.OrderRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -75,6 +77,8 @@ public class OrderService {
     }
 
     // 주문 내에 있는 주문한 상품을 개별로 업데이트 할 수 있는 메서드를 만들어야 할듯...?
+    @CachePut(cacheNames = "getOrderByOrderIdCache", key = "#result.orderId")
+    @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
     @Transactional
     public OrderResponseDto updateOrder(UUID orderId, OrderRequestDto requestDto,String userId) {
         Order order = orderRepository.findByOrderIdAndDeletedFalse(orderId)
@@ -92,6 +96,10 @@ public class OrderService {
         return OrderResponseDto.toOrderResponseDtoFrom(updatedOrder);
     }
 
+    @Caching(evict = {
+            @CacheEvict(cacheNames = "getOrderByOrderIdCache", key = "args[0]"),
+            @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
+    })
     @Transactional
     public void deleteOrder(UUID orderId, String deletedBy) {
         Order order = orderRepository.findByOrderIdAndDeletedFalse(orderId)

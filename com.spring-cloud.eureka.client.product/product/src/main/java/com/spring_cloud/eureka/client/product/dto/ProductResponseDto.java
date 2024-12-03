@@ -6,13 +6,14 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
 @NoArgsConstructor
 @Builder
-public class ProductResponseDto {
+public class ProductResponseDto implements Serializable {
     private UUID productId;
     private String name;
     private String description;
