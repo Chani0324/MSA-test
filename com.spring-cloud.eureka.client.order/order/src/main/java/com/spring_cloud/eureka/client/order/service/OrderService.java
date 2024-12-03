@@ -7,6 +7,9 @@ import com.spring_cloud.eureka.client.order.entity.Order;
 import com.spring_cloud.eureka.client.order.entity.OrderProductList;
 import com.spring_cloud.eureka.client.order.entity.OrderStatus;
 import com.spring_cloud.eureka.client.order.repository.OrderRepository;
+import io.github.resilience4j.circuitbreaker.CircuitBreakerRegistry;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -17,11 +20,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.*;
@@ -34,6 +40,8 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductClient productClient;
+    private final CircuitBreakerRegistry circuitBreakerRegistry;
+    private final RestTemplate restTemplate;
     private final RedisTemplate<String, OrderResponseDto> orderTemplate;
 
     /**
@@ -42,6 +50,7 @@ public class OrderService {
      * cache를 이용해 bulk insert를 할때 UUID나 createdAt같은게 생기니까
      * return에서 null이 뜨는 값들은 dto를 따로 만들어서 없애고 주는게 여기선 맞을지도.
      */
+    @CircuitBreaker(name = "OrderService-createOrder", fallbackMethod = "fallbackInCreateOrder")
     @Transactional
     public OrderResponseDto createOrder(OrderRequestDto requestDto, String userId) {
         Order order = Order.createOrderFrom(userId);
@@ -63,7 +72,7 @@ public class OrderService {
     @Transactional(readOnly = true)
     public Page<OrderResponseDto> getOrders(OrderSearchDto searchDto, Pageable pageable, String role, String userId) {
         log.info("============into method=============");
-        return orderRepository.searchOrders(searchDto, pageable,role, userId);
+        return orderRepository.searchOrders(searchDto, pageable, role, userId);
     }
 
     @Cacheable(cacheNames = "getOrderByOrderIdCache", key = "args[0]")
@@ -77,7 +86,7 @@ public class OrderService {
     @CachePut(cacheNames = "getOrderByOrderIdCache", key = "args[0]")
     @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
     @Transactional
-    public OrderResponseDto updateOrder(UUID orderId, OrderRequestDto requestDto,String userId) {
+    public OrderResponseDto updateOrder(UUID orderId, OrderRequestDto requestDto, String userId) {
         Order order = orderRepository.findByOrderIdAndDeletedFalse(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found or has been deleted"));
 
@@ -138,10 +147,30 @@ public class OrderService {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Service is currently unavailable");
         }
 
-        Integer quantity = product.getQuantity(); // 수량 가져오기
+        Integer quantity = product.getQuantity();
 
         if (quantity < 1) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product with ID " + productId + " is out of stock.");
         }
+    }
+
+    @PostConstruct
+    public void registerEventListeners() {
+        registerEventListener("OrderService-createOrder");
+    }
+
+    public void registerEventListener(String circuitBreakerName) {
+        circuitBreakerRegistry.circuitBreaker(circuitBreakerName).getEventPublisher()
+                .onStateTransition(event -> log.info("#######CircuitBreaker State Transition: {}", event)) // 상태 전환 이벤트 리스너
+                .onFailureRateExceeded(event -> log.info("#######CircuitBreaker Failure Rate Exceeded: {}", event)) // 실패율 초과 이벤트 리스너
+                .onCallNotPermitted(event -> log.info("#######CircuitBreaker Call Not Permitted: {}", event)) // 호출 차단 이벤트 리스너
+                .onError(event -> log.info("#######CircuitBreaker Error: {}", event)); // 오류 발생 이벤트 리스너
+    }
+
+    public OrderResponseDto fallbackInCreateOrder(OrderRequestDto requestDto, String userId, Throwable throwable) {
+        log.error(throwable.getMessage());
+
+        return OrderResponseDto.builder()
+                .build();
     }
 }

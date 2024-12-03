@@ -138,8 +138,8 @@ public class ProductService {
                 .name("empty or deleted product")
                 .build();
     }
-    // 등록할 서킷브레이커들
 
+    // 등록할 서킷브레이커들
     @PostConstruct
     public void registerEventListeners() {
         registerEventListener("ProductService-getProductById");

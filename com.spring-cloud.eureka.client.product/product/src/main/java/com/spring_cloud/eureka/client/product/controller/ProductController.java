@@ -41,6 +41,7 @@ public class ProductController {
                                                            ) {
         checkManager(role);
         return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Server-Port", serverPort)
                 .body(ApiResponseDto.response(3000,
                         "제품을 등록하였습니다.",
                         productService.createProduct(productRequestDto, userId)));
@@ -54,6 +55,7 @@ public class ProductController {
                                                                                 Pageable pageable) {
         log.info(serverPort);
         return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Server-Port", serverPort)
                 .body(ApiResponseDto.response(3100,
                         "제품들을 조회합니다.",
                         productService.getProducts(searchDto, userId, role, pageable)));
@@ -65,6 +67,7 @@ public class ProductController {
         log.info(serverPort);
         log.info(productId.toString());
         return ResponseEntity.status(HttpStatus.CREATED)
+                .header("Server-Port", serverPort)
                 .body(ApiResponseDto.response(3101,
                         "해당 제품을 조회합니다.",
                         productService.getProductById(productId)));
@@ -78,6 +81,7 @@ public class ProductController {
                                             @RequestHeader(value = "X-Role", required = true) String role) {
         checkManager(role);
         return ResponseEntity.status(HttpStatus.OK)
+                .header("Server-Port", serverPort)
                 .body(ApiResponseDto.response(3200,
                         "등록된 제품을 수정하였습니다.",
                         productService.updateProduct(productId, productRequestDto, userId)));
@@ -92,6 +96,7 @@ public class ProductController {
         productService.deleteProduct(productId, userId);
 
         return ResponseEntity.status(HttpStatus.OK)
+                .header("Server-Port", serverPort)
                 .body(ApiResponseDto.response(3300,
                         "등록된 제품을 삭제하였습니다.",
                         ""));

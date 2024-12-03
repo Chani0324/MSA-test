@@ -3,8 +3,7 @@ package com.spring_cloud.eureka.client.order.dto;
 import com.querydsl.core.annotations.QueryProjection;
 import com.spring_cloud.eureka.client.order.entity.Order;
 import com.spring_cloud.eureka.client.order.entity.OrderStatus;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -12,7 +11,8 @@ import java.util.List;
 import java.util.UUID;
 
 @Getter
-@NoArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@Builder
 public class OrderResponseDto implements Serializable {
     private UUID orderId;
     private OrderStatus status;
