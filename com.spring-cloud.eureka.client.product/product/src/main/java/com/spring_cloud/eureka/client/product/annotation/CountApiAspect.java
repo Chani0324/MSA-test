@@ -13,13 +13,15 @@ import org.springframework.stereotype.Component;
 @Component
 public class CountApiAspect {
 
-    private final RedisTemplate<String, Integer> countRedisTemplate;
+    private final RedisTemplate<String, String> countRedisTemplate;
     private final HttpServletRequest request;
 
     @After("@annotation(CountApi)")
     public void countApiCall(JoinPoint joinPoint) {
         String method = request.getMethod();
         String uri = request.getRequestURI();
-        countRedisTemplate.opsForValue().increment(method + " : " + uri);
+        String key = method + " : " + uri;
+
+        countRedisTemplate.opsForZSet().incrementScore("api_call_counts", key, 1);
     }
 }

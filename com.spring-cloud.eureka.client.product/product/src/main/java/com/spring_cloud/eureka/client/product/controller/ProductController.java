@@ -28,7 +28,7 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
-    private final RedisTemplate<String, Integer> countRedisTemplate;
+    private final RedisTemplate<String, String> countRedisTemplate;
 
     @Value("${server.port}")
     private String serverPort;
