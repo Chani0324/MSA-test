@@ -1,5 +1,6 @@
 package com.spring_cloud.eureka.client.product.controller;
 
+import com.spring_cloud.eureka.client.product.annotation.CountApi;
 import com.spring_cloud.eureka.client.product.dto.ApiResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductRequestDto;
 import com.spring_cloud.eureka.client.product.dto.ProductResponseDto;
@@ -11,6 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.context.config.annotation.RefreshScope;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +28,12 @@ import java.util.UUID;
 public class ProductController {
 
     private final ProductService productService;
+    private final RedisTemplate<String, Integer> countRedisTemplate;
 
     @Value("${server.port}")
     private String serverPort;
 
+    @CountApi
     @PostMapping
     public ResponseEntity<ApiResponseDto<ProductResponseDto>> createProduct(@RequestBody ProductRequestDto productRequestDto,
                                                            @RequestHeader(value = "X-User_id", required = true) String userId,
@@ -42,6 +46,7 @@ public class ProductController {
                         productService.createProduct(productRequestDto, userId)));
     }
 
+    @CountApi
     @GetMapping
     public ResponseEntity<ApiResponseDto<Page<ProductResponseDto>>> getProducts(ProductSearchDto searchDto,
                                                                                 @RequestHeader(value = "X-User_id", required = true) String userId,
@@ -54,6 +59,7 @@ public class ProductController {
                         productService.getProducts(searchDto, userId, role, pageable)));
     }
 
+    @CountApi
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponseDto<? extends ProductResponseDto>> getProductById(@PathVariable UUID productId) {
         log.info(serverPort);
@@ -63,6 +69,7 @@ public class ProductController {
                         productService.getProductById(productId)));
     }
 
+    @CountApi
     @PutMapping("/{productId}")
     public ResponseEntity<ApiResponseDto<ProductResponseDto>> updateProduct(@PathVariable UUID productId,
                                             @RequestBody ProductRequestDto productRequestDto,
@@ -75,6 +82,7 @@ public class ProductController {
                         productService.updateProduct(productId, productRequestDto, userId)));
     }
 
+    @CountApi
     @DeleteMapping("/{productId}")
     public ResponseEntity<ApiResponseDto<?>> deleteProduct(@PathVariable UUID productId,
                               @RequestHeader(value = "X-User_Id", required = true) String userId,
@@ -98,4 +106,5 @@ public class ProductController {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Access denied. User role is not MANAGER.");
         }
     }
+
 }

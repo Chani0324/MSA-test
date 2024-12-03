@@ -1,5 +1,6 @@
 package com.spring_cloud.eureka.client.order.controller;
 
+import com.spring_cloud.eureka.client.order.annotation.CountApi;
 import com.spring_cloud.eureka.client.order.dto.ApiResponseDto;
 import com.spring_cloud.eureka.client.order.dto.OrderRequestDto;
 import com.spring_cloud.eureka.client.order.dto.OrderResponseDto;
@@ -21,6 +22,7 @@ public class OrderController {
 
     private final OrderService orderService;
 
+    @CountApi
     @PostMapping
     public ResponseEntity<ApiResponseDto<OrderResponseDto>> createOrder(@RequestBody OrderRequestDto orderRequestDto,
                                                                         @RequestHeader(value = "X-User_Id", required = true) String userId) {
@@ -31,6 +33,7 @@ public class OrderController {
                         orderService.createOrder(orderRequestDto, userId)));
     }
 
+    @CountApi
     @GetMapping
     public ResponseEntity<ApiResponseDto<Page<OrderResponseDto>>> getOrders(OrderSearchDto searchDto, Pageable pageable,
                                             @RequestHeader(value = "X-User_Id", required = true) String userId,
@@ -41,6 +44,7 @@ public class OrderController {
                         orderService.getOrders(searchDto, pageable, role, userId)));
     }
 
+    @CountApi
     @GetMapping("/{orderId}")
     public ResponseEntity<ApiResponseDto<OrderResponseDto>> getOrderById(@PathVariable UUID orderId) {
         return ResponseEntity.status(HttpStatus.OK)
@@ -49,6 +53,7 @@ public class OrderController {
                         orderService.getOrderById(orderId)));
     }
 
+    @CountApi
     @PutMapping("/{orderId}")
     public ResponseEntity<ApiResponseDto<OrderResponseDto>> updateOrder(@PathVariable UUID orderId,
                                         @RequestBody OrderRequestDto orderRequestDto,
@@ -60,6 +65,7 @@ public class OrderController {
                         orderService.updateOrder(orderId, orderRequestDto, userId)));
     }
 
+    @CountApi
     @DeleteMapping("/{orderId}")
     public ResponseEntity<ApiResponseDto<?>> deleteOrder(@PathVariable UUID orderId, @RequestParam String deletedBy) {
         orderService.deleteOrder(orderId, deletedBy);
