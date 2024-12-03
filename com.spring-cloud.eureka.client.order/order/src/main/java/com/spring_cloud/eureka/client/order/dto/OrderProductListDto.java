@@ -14,7 +14,7 @@ public class OrderProductListDto implements Serializable {
     private UUID productId;
     private int quantity;
 
-    public static OrderProductListDto orderProductFrom(OrderProductList orderProductList) {
+    public static OrderProductListDto fromOrderProductList(OrderProductList orderProductList) {
         return OrderProductListDto.builder()
                 .productId(orderProductList.getProductId())
                 .quantity(orderProductList.getQuantity())

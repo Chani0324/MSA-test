@@ -33,7 +33,7 @@ public class OrderResponseDto implements Serializable {
         this.orderProductList = orderProductList;
     }
 
-    public static OrderResponseDto toOrderResponseDtoFrom(Order order) {
+    public static OrderResponseDto fromEntity(Order order) {
         return new OrderResponseDto(
                 order.getOrderId(),
                 order.getStatus(),
@@ -42,7 +42,7 @@ public class OrderResponseDto implements Serializable {
                 order.getUpdatedAt(),
                 order.getUpdatedBy(),
                 order.getOrderProductList().stream()
-                        .map(OrderProductListDto::orderProductFrom)
+                        .map(OrderProductListDto::fromOrderProductList)
                         .toList()
         );
     }

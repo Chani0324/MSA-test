@@ -69,8 +69,21 @@ public class Order extends BaseEntity {
                 this.getUpdatedAt(),
                 this.getUpdatedBy(),
                 this.orderProductList.stream()
-                .map(OrderProductListDto::orderProductFrom)
+                .map(OrderProductListDto::fromOrderProductList)
                 .toList()
         );
+    }
+
+    public static Order fromResponseDto(OrderResponseDto orderResponseDto) {
+        return Order.builder()
+                .orderId(orderResponseDto.getOrderId())
+                .status(orderResponseDto.getStatus())
+                .createdAt(orderResponseDto.getCreatedAt())
+                .createdBy(orderResponseDto.getCreatedBy())
+                .updatedAt(orderResponseDto.getUpdatedAt())
+                .updatedBy(orderResponseDto.getUpdatedBy())
+                // Builder패턴 쓸 때 주의해야하는 부분. list초기화 안해주면 진짜 큰일남...
+                .orderProductList(new ArrayList<>())
+                .build();
     }
 }

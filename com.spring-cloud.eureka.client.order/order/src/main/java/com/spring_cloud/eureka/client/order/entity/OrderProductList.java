@@ -1,5 +1,6 @@
 package com.spring_cloud.eureka.client.order.entity;
 
+import com.spring_cloud.eureka.client.order.dto.OrderProductListDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -25,5 +26,12 @@ public class OrderProductList {
 
     public void updateOrder(Order order) {
         this.order = order;
+    }
+
+    public static OrderProductList fromDto(OrderProductListDto orderProductList) {
+        return OrderProductList.builder()
+                .productId(orderProductList.getProductId())
+                .quantity(orderProductList.getQuantity())
+                .build();
     }
 }

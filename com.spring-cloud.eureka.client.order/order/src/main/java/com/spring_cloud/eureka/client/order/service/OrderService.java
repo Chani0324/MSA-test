@@ -15,16 +15,17 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -33,32 +34,29 @@ public class OrderService {
 
     private final OrderRepository orderRepository;
     private final ProductClient productClient;
+    private final RedisTemplate<String, OrderResponseDto> orderTemplate;
 
     /**
      * 나중에 TaskScheduler를 이용해서 주문 취소가 없을 시 5분마나 넣는다던지, 결제를 확인 후 넣는다던지.. 등등
      * 다양한 메소드 필요할듯?
+     * cache를 이용해 bulk insert를 할때 UUID나 createdAt같은게 생기니까
+     * return에서 null이 뜨는 값들은 dto를 따로 만들어서 없애고 주는게 여기선 맞을지도.
      */
-    @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
     @Transactional
     public OrderResponseDto createOrder(OrderRequestDto requestDto, String userId) {
-        // Check if products exist and if they have enough quantity
+        Order order = Order.createOrderFrom(userId);
         for (OrderProductListDto orderProductList : requestDto.getOrderList()) {
             ResponseEntity<ApiResponseDto<ProductResponseDto>> responseEntity = productClient.getProduct(orderProductList.getProductId());
             ProductResponseDto product = Objects.requireNonNull(responseEntity.getBody()).getData();
-
             validateProductQuantity(product, orderProductList.getProductId());
-        }
-        Order order = Order.createOrderFrom(userId);
 
-        for (OrderProductListDto orderProductList : requestDto.getOrderList()) {
             productClient.reduceProductQuantity(orderProductList.getProductId(), orderProductList.getQuantity());
-
-            OrderProductList toOrderProductList = getOrderProductList(orderProductList);
-            order.addOrderProduct(toOrderProductList);
+            order.addOrderProduct(OrderProductList.fromDto(orderProductList));
         }
-        Order savedOrder = orderRepository.save(order);
 
-        return OrderResponseDto.toOrderResponseDtoFrom(savedOrder);
+        OrderResponseDto orderResponseDto = OrderResponseDto.fromEntity(order);
+        orderTemplate.opsForList().rightPush("orderCache::behind", orderResponseDto);
+        return orderResponseDto;
     }
 
     @Cacheable(cacheNames = "getOrderAllCache", key = "getMethodName()")
@@ -73,10 +71,9 @@ public class OrderService {
     public OrderResponseDto getOrderById(UUID orderId) {
         Order order = orderRepository.findByOrderIdAndDeletedFalse(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found or has been deleted"));
-        return OrderResponseDto.toOrderResponseDtoFrom(order);
+        return OrderResponseDto.fromEntity(order);
     }
 
-    // 주문 내에 있는 주문한 상품을 개별로 업데이트 할 수 있는 메서드를 만들어야 할듯...?
     @CachePut(cacheNames = "getOrderByOrderIdCache", key = "args[0]")
     @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
     @Transactional
@@ -87,13 +84,12 @@ public class OrderService {
         List<OrderProductList> orderProductLists = new ArrayList<>();
 
         for (OrderProductListDto orderProductList : requestDto.getOrderList()) {
-            OrderProductList toOrderProductList = getOrderProductList(orderProductList);
-            orderProductLists.add(toOrderProductList);
+            orderProductLists.add(OrderProductList.fromDto(orderProductList));
         }
         order.updateOrder(orderProductLists, userId, OrderStatus.valueOf(requestDto.getStatus()));
         Order updatedOrder = orderRepository.save(order);
 
-        return OrderResponseDto.toOrderResponseDtoFrom(updatedOrder);
+        return OrderResponseDto.fromEntity(updatedOrder);
     }
 
     @Caching(evict = {
@@ -108,11 +104,29 @@ public class OrderService {
         orderRepository.save(order);
     }
 
-    private OrderProductList getOrderProductList(OrderProductListDto orderProductList) {
-        return OrderProductList.builder()
-                .productId(orderProductList.getProductId())
-                .quantity(orderProductList.getQuantity())
-                .build();
+    @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
+    @Scheduled(fixedRate = 20, timeUnit = TimeUnit.SECONDS)
+    @Transactional
+    public void insertOrders() {
+        boolean exists = Optional.of(orderTemplate.hasKey("orderCache::behind"))
+                .orElse(false);
+        if (!exists) {
+            log.info("no orders in cache");
+            return;
+        }
+
+        ListOperations<String, OrderResponseDto> orderOps = orderTemplate.opsForList();
+
+        List<OrderResponseDto> orderResponseDtos = orderOps.range("orderCache::behind", 0, -1);
+        List<Order> ordersToSave = orderResponseDtos.stream()
+                .map(orderResponseDto -> {
+                    Order order = Order.fromResponseDto(orderResponseDto);
+                    orderResponseDto.getOrderProductList().forEach(orderProductListDto -> order.addOrderProduct(OrderProductList.fromDto(orderProductListDto)));
+                    return order;
+                })
+                .toList();
+        orderRepository.saveAll(ordersToSave);
+        orderTemplate.delete("orderCache::behind");
     }
 
     private void validateProductQuantity(ProductResponseDto product, UUID productId) {
