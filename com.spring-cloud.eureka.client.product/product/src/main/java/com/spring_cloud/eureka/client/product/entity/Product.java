@@ -25,7 +25,7 @@ public class Product extends BaseEntity {
     private Integer price;
     private Integer quantity;
 
-    public static Product createProductOf(ProductRequestDto requestDto, String email) {
+    public static Product ofDtoAndEmail(ProductRequestDto requestDto, String email) {
         return Product.builder()
                 .name(requestDto.getName())
                 .description(requestDto.getDescription())

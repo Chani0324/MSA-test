@@ -1,5 +1,6 @@
 package com.spring_cloud.eureka.client.product.config;
 
+import com.spring_cloud.eureka.client.product.dto.ProductRankDto;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -15,7 +16,16 @@ public class RedisConfig {
         RedisTemplate<String, String> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(redisConnectionFactory);
         redisTemplate.setKeySerializer(RedisSerializer.string());
-        redisTemplate.setValueSerializer(new GenericToStringSerializer<>(String.class));
+        redisTemplate.setValueSerializer(RedisSerializer.string());
+        return redisTemplate;
+    }
+
+    @Bean
+    public RedisTemplate<String, ProductRankDto> rankTemplate(RedisConnectionFactory redisConnectionFactory) {
+        RedisTemplate<String, ProductRankDto> redisTemplate = new RedisTemplate<>();
+        redisTemplate.setConnectionFactory(redisConnectionFactory);
+        redisTemplate.setKeySerializer(RedisSerializer.string());
+        redisTemplate.setValueSerializer(RedisSerializer.json());
         return redisTemplate;
     }
 }

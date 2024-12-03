@@ -1,5 +1,6 @@
 package com.spring_cloud.eureka.client.product.service;
 
+import com.spring_cloud.eureka.client.product.dto.ProductRankDto;
 import com.spring_cloud.eureka.client.product.dto.ProductRequestDto;
 import com.spring_cloud.eureka.client.product.dto.ProductResponseDto;
 import com.spring_cloud.eureka.client.product.dto.ProductSearchDto;
@@ -17,11 +18,15 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Slf4j
@@ -31,13 +36,14 @@ public class ProductService {
 
     private final ProductRepository productRepository;
     private final CircuitBreakerRegistry circuitBreakerRegistry;
+    private final RedisTemplate<String, ProductRankDto> rankOps;
 
     @CacheEvict(cacheNames = "getProductAllCache", allEntries = true)
     @Transactional
     public ProductResponseDto createProduct(ProductRequestDto requestDto, String userId) {
-        Product product = Product.createProductOf(requestDto, userId);
+        Product product = Product.ofDtoAndEmail(requestDto, userId);
         Product savedProduct = productRepository.save(product);
-        return ProductResponseDto.toProductResponseDtoFrom(savedProduct);
+        return ProductResponseDto.fromEntity(savedProduct);
     }
 
     /**
@@ -60,15 +66,16 @@ public class ProductService {
     }
 
     @CircuitBreaker(name = "ProductService-getProductById", fallbackMethod = "fallbackInGetProductById")
-    @Cacheable(cacheNames = "getProductByProductIdCache", key = "#result.productId")
+    @Cacheable(cacheNames = "getProductByProductIdCache", key = "args[0]")
     @Transactional(readOnly = true)
     public ProductResponseDto getProductById(UUID productId) {
+        log.info("productId = : {}", productId.toString());
         Product product = productRepository.findByIdAndDeletedFalse(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product not found or has been deleted"));
-        return ProductResponseDto.toProductResponseDtoFrom(product);
+        return ProductResponseDto.fromEntity(product);
     }
 
-    @CachePut(cacheNames = "getProductByProductIdCache", key = "#result.productId")
+    @CachePut(cacheNames = "getProductByProductIdCache", key = "args[0]")
     @CacheEvict(cacheNames = "getProductAllCache", allEntries = true)
     @Transactional
     public ProductResponseDto updateProduct(UUID productId, ProductRequestDto requestDto, String userId) {
@@ -78,7 +85,7 @@ public class ProductService {
         product.updateProduct(requestDto, userId);
         Product updatedProduct = productRepository.save(product);
 
-        return ProductResponseDto.toProductResponseDtoFrom(updatedProduct);
+        return ProductResponseDto.fromEntity(updatedProduct);
     }
 
     @Caching(evict = {
@@ -93,7 +100,6 @@ public class ProductService {
         productRepository.save(product);
     }
 
-
     @Transactional
     public void reduceProductQuantity(UUID productId, int quantity) {
         Product product = productRepository.findByIdAndDeletedFalse(productId)
@@ -104,6 +110,17 @@ public class ProductService {
         }
 
         product.reduceQuantity(quantity);
+        rankOps.opsForZSet().incrementScore(
+                "soldRanks",
+                ProductRankDto.fromEntity(product),
+                quantity
+        );
+    }
+
+    public List<ProductRankDto> getMostSold() {
+        Set<ProductRankDto> ranks = rankOps.opsForZSet().reverseRange("soldRanks", 0, 9);
+        if (ranks == null) return Collections.emptyList();
+        return ranks.stream().toList();
     }
 
     // fallback 메서드는 주 메서드와 동일한 매개변수, 반환 타입을 가져야 한다.
@@ -121,8 +138,8 @@ public class ProductService {
                 .name("empty or deleted product")
                 .build();
     }
-
     // 등록할 서킷브레이커들
+
     @PostConstruct
     public void registerEventListeners() {
         registerEventListener("ProductService-getProductById");
@@ -135,5 +152,4 @@ public class ProductService {
                 .onCallNotPermitted(event -> log.info("#######CircuitBreaker Call Not Permitted: {}", event)) // 호출 차단 이벤트 리스너
                 .onError(event -> log.info("#######CircuitBreaker Error: {}", event)); // 오류 발생 이벤트 리스너
     }
-
 }

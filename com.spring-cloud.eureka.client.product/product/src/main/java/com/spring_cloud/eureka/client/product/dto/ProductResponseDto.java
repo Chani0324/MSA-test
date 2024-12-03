@@ -37,7 +37,7 @@ public class ProductResponseDto implements Serializable {
         this.updatedBy = updatedBy;
     }
 
-    public static ProductResponseDto toProductResponseDtoFrom(Product product) {
+    public static ProductResponseDto fromEntity(Product product) {
         return new ProductResponseDto(
                 product.getId(),
                 product.getName(),

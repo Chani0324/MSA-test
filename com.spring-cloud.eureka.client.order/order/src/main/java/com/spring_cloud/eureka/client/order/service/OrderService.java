@@ -68,7 +68,7 @@ public class OrderService {
         return orderRepository.searchOrders(searchDto, pageable,role, userId);
     }
 
-    @Cacheable(cacheNames = "getOrderByOrderIdCache", key = "#result.orderId")
+    @Cacheable(cacheNames = "getOrderByOrderIdCache", key = "args[0]")
     @Transactional(readOnly = true)
     public OrderResponseDto getOrderById(UUID orderId) {
         Order order = orderRepository.findByOrderIdAndDeletedFalse(orderId)
@@ -77,7 +77,7 @@ public class OrderService {
     }
 
     // 주문 내에 있는 주문한 상품을 개별로 업데이트 할 수 있는 메서드를 만들어야 할듯...?
-    @CachePut(cacheNames = "getOrderByOrderIdCache", key = "#result.orderId")
+    @CachePut(cacheNames = "getOrderByOrderIdCache", key = "args[0]")
     @CacheEvict(cacheNames = "getOrderAllCache", allEntries = true)
     @Transactional
     public OrderResponseDto updateOrder(UUID orderId, OrderRequestDto requestDto,String userId) {

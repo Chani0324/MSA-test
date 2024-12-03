@@ -35,7 +35,7 @@ public class ProductController {
 
     @CountApi
     @PostMapping
-    public ResponseEntity<ApiResponseDto<ProductResponseDto>> createProduct(@RequestBody ProductRequestDto productRequestDto,
+    public ResponseEntity<ApiResponseDto<? extends ProductResponseDto>> createProduct(@RequestBody ProductRequestDto productRequestDto,
                                                            @RequestHeader(value = "X-User_id", required = true) String userId,
                                                            @RequestHeader(value = "X-Role", required = true) String role
                                                            ) {
@@ -48,7 +48,7 @@ public class ProductController {
 
     @CountApi
     @GetMapping
-    public ResponseEntity<ApiResponseDto<Page<ProductResponseDto>>> getProducts(ProductSearchDto searchDto,
+    public ResponseEntity<ApiResponseDto<Page<? extends ProductResponseDto>>> getProducts(ProductSearchDto searchDto,
                                                                                 @RequestHeader(value = "X-User_id", required = true) String userId,
                                                                                 @RequestHeader(value = "X-Role", required = true) String role,
                                                                                 Pageable pageable) {
@@ -63,6 +63,7 @@ public class ProductController {
     @GetMapping("/{productId}")
     public ResponseEntity<ApiResponseDto<? extends ProductResponseDto>> getProductById(@PathVariable UUID productId) {
         log.info(serverPort);
+        log.info(productId.toString());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponseDto.response(3101,
                         "해당 제품을 조회합니다.",
@@ -71,7 +72,7 @@ public class ProductController {
 
     @CountApi
     @PutMapping("/{productId}")
-    public ResponseEntity<ApiResponseDto<ProductResponseDto>> updateProduct(@PathVariable UUID productId,
+    public ResponseEntity<ApiResponseDto<? extends ProductResponseDto>> updateProduct(@PathVariable UUID productId,
                                             @RequestBody ProductRequestDto productRequestDto,
                                             @RequestHeader(value = "X-User_Id", required = true) String userId,
                                             @RequestHeader(value = "X-Role", required = true) String role) {
@@ -99,6 +100,14 @@ public class ProductController {
     @GetMapping("/{productId}/reduceQuantity")
     public void reduceProductQuantity(@PathVariable UUID productId, @RequestParam int quantity) {
         productService.reduceProductQuantity(productId, quantity);
+    }
+
+    @GetMapping("/ranks")
+    public ResponseEntity<ApiResponseDto<?>> getProductRanks() {
+        return ResponseEntity.status(HttpStatus.OK)
+                .body(ApiResponseDto.response(3900,
+                        "랭킹을 조회합니다.",
+                        productService.getMostSold()));
     }
 
     private void checkManager(String role) {
