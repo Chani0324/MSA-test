@@ -65,7 +65,7 @@ public class ProductService {
         return productRepository.searchProducts(searchDto, userId, userRoleEnum, pageable);
     }
 
-    @CircuitBreaker(name = "ProductService-getProductById", fallbackMethod = "fallbackInGetProductById")
+    @CircuitBreaker(name = "productServiceCircuitBreaker", fallbackMethod = "fallbackInGetProductById")
     @Cacheable(cacheNames = "getProductByProductIdCache", key = "args[0]")
     @Transactional(readOnly = true)
     public ProductResponseDto getProductById(UUID productId) {
@@ -142,7 +142,7 @@ public class ProductService {
     // 등록할 서킷브레이커들
     @PostConstruct
     public void registerEventListeners() {
-        registerEventListener("ProductService-getProductById");
+        registerEventListener("productServiceCircuitBreaker");
     }
 
     public void registerEventListener(String circuitBreakerName) {

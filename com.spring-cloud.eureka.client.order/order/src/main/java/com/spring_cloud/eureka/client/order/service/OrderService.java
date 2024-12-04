@@ -41,7 +41,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final ProductClient productClient;
     private final CircuitBreakerRegistry circuitBreakerRegistry;
-    private final RestTemplate restTemplate;
     private final RedisTemplate<String, OrderResponseDto> orderTemplate;
 
     /**
@@ -50,7 +49,7 @@ public class OrderService {
      * cache를 이용해 bulk insert를 할때 UUID나 createdAt같은게 생기니까
      * return에서 null이 뜨는 값들은 dto를 따로 만들어서 없애고 주는게 여기선 맞을지도.
      */
-    @CircuitBreaker(name = "OrderService-createOrder", fallbackMethod = "fallbackInCreateOrder")
+    @CircuitBreaker(name = "orderServiceCircuitBreaker", fallbackMethod = "fallbackInCreateOrder")
     @Transactional
     public OrderResponseDto createOrder(OrderRequestDto requestDto, String userId) {
         Order order = Order.createOrderFrom(userId);
@@ -156,7 +155,7 @@ public class OrderService {
 
     @PostConstruct
     public void registerEventListeners() {
-        registerEventListener("OrderService-createOrder");
+        registerEventListener("orderServiceCircuitBreaker");
     }
 
     public void registerEventListener(String circuitBreakerName) {
